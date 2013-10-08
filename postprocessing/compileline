@@ -1,0 +1,1 @@
+g++ -I. -Iinclude -I:/ifs/home/c2b2/ys_lab/bg2178/tcr-src/postprocessing  errorcorrection.cpp -g -o fixreads

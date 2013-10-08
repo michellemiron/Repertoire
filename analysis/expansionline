@@ -1,0 +1,1 @@
+for i in `cat  datapaths`; do for j in $i/*.productive.tsv; do sh clonal_expansion.sh $j; done ; done

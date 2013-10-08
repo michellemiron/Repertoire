@@ -1,0 +1,1 @@
+grep -E --colour "C.*[A-Z]G[A-Z]G|$" test

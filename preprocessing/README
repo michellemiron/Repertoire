@@ -1,0 +1,13 @@
+trim.pl -> trims the reads. no wrapper but qsub should be run on commandline.
+bwa_wrapper.sh -> runs do_bwa.sh which executes the bwasw tool to map the reads.
+make_kmers.sh -> constructs list of kmers for all specified samples. Runs read2kmer.py
+read2kmer.py -> converts reads into kmers. Kmer length can be changed in this script
+collect_kmers.sh -> get kmer counts. runs splitsort_kmers.sh.
+runsw.sh -> runs sw_align.py to do pairwise smith-waterman alignment. Used for initial check of number of matches/mismatches/discards.
+splitfastq.sh -> split fastq files into pieces
+smithwaterman.cpp -> run smith-waterman alignment. main algorithm obtained from: https://wiki.uni-koeln.de/biologicalphysics/index.php/Implementation_of_the_Smith-Waterman_local_alignment_algorithm but heavily adapted for TCR work.
+
+
+
+
+Note: wrappers exist in cases where significant preparatory steps need to be run prior to submitting the job
