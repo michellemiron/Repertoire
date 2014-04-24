@@ -38,6 +38,7 @@ library(getopt)
 spec <- matrix(c(
         'input'     , 'i', 1, "character", "input csv or tsv file (required)",
         'type'     , 't', 2, "character", "csv or tsv (optional); default: tsv",
+        "fraction" , "f", 2, "double", "[0.5] fraction of reads for T1",
         'help'   , 'h', 0, "logical",   "this help"
 ),ncol=5,byrow=T)
 
@@ -57,6 +58,12 @@ if (!is.null(opt$type)) {
    
 }
 
+frac = 0.5
+
+if (!is.null(opt$fraction)) {
+   frac = opt$fraction
+}
+
 if( itype == "c")  {
     tcr = read.table(file, header=T, sep=",")
 } else if (itype == "t") {
@@ -65,10 +72,10 @@ if( itype == "c")  {
   tcr = read.table(file, header=T)			
 }
 
-tcr=downsample(tcr)
+tcr=downsample(tcr, f = frac)
 
 
-write.table(tcr, "", quote=F, sep="\t")
+write.table(tcr, "", quote=F, sep="\t", row.names = F)
 
 
 
