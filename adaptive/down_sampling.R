@@ -8,7 +8,7 @@ downsample <- function(tcr, target = 2000000, f = 0.5) {
 	nclone = nrow(tcr)
 	
 	ratio = target / total * nsample
-	
+	cat("Down-sampling to", ratio, sep="\t")
 	# first, binomial to get the total number of reads per sample
 	treads = rbinom(1, sum(tcr$total), ratio)
 	readA = rmultinom(1, treads, c(f, 1-f))
@@ -65,21 +65,10 @@ if( itype == "c")  {
   tcr = read.table(file, header=T)			
 }
 
-num = ncol(tcr)
+tcr=downsample(tcr)
 
-cd4 <- tcr[, grep("CD4|cd4", colnames(tcr))]
-cd8 <- tcr[, grep("CD8|cd8", colnames(tcr))]
 
-cd4 <- normalize(cd4)
-cd8 <- normalize(cd8)
-
-# first summary stats
-cd4stats = repSum(cd4, fold)
-cd8stats = repSum(cd8, fold)
-# print(cd4stats[order(rownames(cd4stats), decreasing=T), ])
-# print(cd8stats[order(rownames(cd8stats), decreasing=T), ])
-# write.table(cd4stats, "", quote=F, sep="\t")
- write.table(cd8stats, "", quote=F, sep="\t")
+write.table(tcr, "", quote=F, sep="\t")
 
 
 
