@@ -8,15 +8,16 @@ downsample <- function(tcr, target = 2000000, f = 0.5) {
 	nclone = nrow(tcr)
 	
 	ratio = target / total * nsample
-	cat("Down-sampling to", ratio, sep="\t")
+#	cat("Down-sampling to", ratio, sep="\t")
 	# first, binomial to get the total number of reads per sample
 	treads = rbinom(1, sum(tcr$total), ratio)
 	readA = rmultinom(1, treads, c(f, 1-f))
 	      
 	# then multinomial to get frequency of each clone
-	
+	## rmultinom too slow!
+
 	for (j in 1:2) {
-	    tcr[,j+2] = rmultinom(1, readA[j], tcr[,j+2])
+	    tcr[,j+2] = rmultinomial(readA[j], tcr[,j+2])
 	}
 
 	for (i in 1:nclone) {
@@ -31,6 +32,37 @@ downsample <- function(tcr, target = 2000000, f = 0.5) {
 
 }
 
+
+## re-implement multinorm random number function
+
+rmultinomial <- function(n, p){
+ ncat <- length(p)
+#     Check Arguments
+      if (n < 0) {cat("n < 0 ","\n"); break}
+      if (ncat <= 1) {cat("ncat <= 1 ","\n"); break}
+      if (any(p < 0.0)) {cat("Some P(i) < 0 ","\n"); break}
+      p = p / sum(p)
+      if (any(p > 1.0)) {cat("Some P(i) > 1.0 ","\n"); break}
+ eps <- .Machine$double.eps^0.9
+      if (sum(p) > (1.0 + eps) | sum(p) < (1.0 - eps) ) {cat("Sum of P(i)
+should equal 1.0 ","\n"); break}
+
+#     Initialize variables
+      ntot <- n
+      sum <- 1.0
+      ix <- rep(0,ncat)
+
+#     Generate the observation
+      for (icat in 1:(ncat - 1)) {
+          prob <-  p[icat]/sum
+          ix[icat] <-  rbinom(1,ntot,prob)
+          ntot <- ntot - ix[icat]
+          if (ntot <= 0) return(ix)
+          sum <- sum - p[icat]
+ }
+      ix[ncat] <- ntot
+ return (ix)
+}
 
 # args<-commandArgs(TRUE)
 library(getopt)
@@ -72,7 +104,7 @@ if( itype == "c")  {
   tcr = read.table(file, header=T)			
 }
 
-tcr=downsample(tcr, f = frac)
+tcr=downsample(tcr)
 
 
 write.table(tcr, "", quote=F, sep="\t", row.names = F)
