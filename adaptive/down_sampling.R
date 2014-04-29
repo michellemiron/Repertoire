@@ -2,14 +2,15 @@
 
 downsample <- function(tcr, target = 2000000, f = 0.5) {
 	# target is the number of targeted reads per sample
-	total = sum(tcr$total)
+#	total = sum(tcr$total)
 	nc = ncol(tcr)
 	nsample = nc - 2
 	nclone = nrow(tcr)
 	
-	ratio = target / total * nsample
+#	ratio = target / total * nsample
 #	cat("Down-sampling to", ratio, sep="\t")
-	# first, binomial to get the total number of reads per sample
+	
+
 	treads = rbinom(1, sum(tcr$total), ratio)
 	readA = rmultinom(1, treads, c(f, 1-f))
 	      
@@ -17,7 +18,8 @@ downsample <- function(tcr, target = 2000000, f = 0.5) {
 	## rmultinom too slow!
 
 	for (j in 1:2) {
-	    tcr[,j+2] = rmultinomial(readA[j], tcr[,j+2])
+	    lambda = target * tcr[,j+2] / sum(tcr[,j+2])
+	    tcr[,j+2] = rpois(nclone, lambda)
 	}
 
 	for (i in 1:nclone) {
@@ -31,6 +33,9 @@ downsample <- function(tcr, target = 2000000, f = 0.5) {
 	return(tcr)
 
 }
+
+
+
 
 
 ## re-implement multinorm random number function
