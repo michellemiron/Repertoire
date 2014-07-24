@@ -1,6 +1,6 @@
 # downsample adaptive data
 
-downsample <- function(tcr, target = 2000000, tnoise = 0.125,  nsim = 10) {
+downsample <- function(tcr, target = 2000000, tnoise = 0.125,  nsim = 2) {
 	# target is the number of targeted reads per sample
 	# noise is \sigma / \mu for read number
         # nsim: number of simulations
@@ -10,7 +10,8 @@ downsample <- function(tcr, target = 2000000, tnoise = 0.125,  nsim = 10) {
 	nclone = nrow(tcr)
 	
 	results = rep(0, nsim + 1)
-	results[1] = jensen_shannon(tcr[1:1000,3], tcr[1:1000,4])
+	results[1] = jensen_shannon(tcr[1:100,3], tcr[1:100,4])
+#	results[1] = jensen_shannon(tcr[,3], tcr[,4])
 
 	nreads = rnorm(nsim * 2 , target, tnoise * target)
 	p = matrix(ncol=2, nrow=nclone)
@@ -23,7 +24,8 @@ downsample <- function(tcr, target = 2000000, tnoise = 0.125,  nsim = 10) {
 		}
 
 		q = p[p[,1] > 1 | p[,2]>1, ] 
-		results[1+i] = jensen_shannon(q[1:1000,1], q[1:1000,2])		
+		results[1+i] = jensen_shannon(q[1:100,1], q[1:100,2])		
+#		results[1+i] = jensen_shannon(q[,1], q[,2])			
 		
 	}
 #	tcr[,2] = apply(tcr[,3:4], 1, sum)
@@ -34,6 +36,18 @@ downsample <- function(tcr, target = 2000000, tnoise = 0.125,  nsim = 10) {
 
 }
 
+
+correlation <- function(tcr) 
+{
+	r = rep(0,3)
+	nonzero = tcr[tcr$t1 > 0 & tcr$t2 > 0, ]	
+
+	r[1] = cor(tcr$t1, tcr$t2)
+	r[2] = cor(nonzero$t1, nonzero$t2)
+	r[3] = cor(log(nonzero$t1), log(nonzero$t2))
+	cat(r, "\n", sep="\t")
+	
+}
 
 
 shannon.entropy <- function(p)
@@ -107,6 +121,8 @@ if( itype == "c")  {
 } else {
   tcr = read.table(file, header=T)			
 }
+
+# correlation(tcr)
 
 downsample(tcr, nreads , noise)
 
