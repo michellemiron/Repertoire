@@ -22,8 +22,8 @@ compare <- function(tcr, freq1, freq2, fold=5, prefix = "TopClone") {
     # pre-tx unstim sample
     preCol <- grep("pretx_unstim", colnames(tcr))[1]
 
-	# post-tx unstim samples
-	postColsAll <- grep("tx_stim|tx_anti", colnames(tcr), invert=T)
+	# unstim samples
+	unstimCols <- grep("tx_stim|tx_anti", colnames(tcr), invert=T)
 	
 	# post-tx stim sample in MLR
    	postStimCol <- grep("posttx_antidonor", colnames(tcr))
@@ -102,7 +102,24 @@ compare <- function(tcr, freq1, freq2, fold=5, prefix = "TopClone") {
 
 	
 ### trend of reactive clones from post-tx stim in post-tx unstim samples
+	pdf(paste(prefix, "unstimSamples_preMLR.pdf", sep = "_"))
 	
+
+	rename = gsub("Subject4_|ITN4_|_unstim_CD4|_unstim_CD8|_CD4|_antidonor", "", colnames(topSti))
+	colnames(topSti) = rename
+
+	logtrans = log10(topSti + 0.0000001)
+
+	unstimSamples = topSti[, unstimCols]
+	newData = cbind(logtrans$pretx, logtrans$6mo, logtrans$12mo, logtrans$24mo, logtrans$pretx_stim, logtrans$12mo_posttx)
+	
+######## Should manually change the order 
+	plot(newData[1,], xlab="Samples", ylab="Frequency(log10)", col="white")
+
+
+			
+
+	dev.off()
 	
 }
 
