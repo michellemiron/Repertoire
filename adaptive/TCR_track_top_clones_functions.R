@@ -102,26 +102,60 @@ compare <- function(tcr, freq1, freq2, fold=5, prefix = "TopClone") {
 
 	
 ### trend of reactive clones from post-tx stim in post-tx unstim samples
-	pdf(paste(prefix, "unstimSamples_preMLR.pdf", sep = "_"))
-	
+	pdf(paste(prefix, "unstimSamples.pdf", sep = "_"), width=10, height=10)
+	par(mfrow=c(2,1))
 
-	rename = gsub("Subject4_|ITN4_|_unstim_CD4|_unstim_CD8|_CD4|_antidonor", "", colnames(topSti))
+	rename = gsub("_unstim_CD4|_unstim_CD8|_CD4|_CD8|_antidonor", "", colnames(topSti))
+	rename = gsub("Subject4_|ITN4_", "S4_", rename)
 	colnames(topSti) = rename
 
-	logtrans = log10(topSti + 0.0000001)
+###	unstimSamples = topSti[, unstimCols]
 
-	unstimSamples = topSti[, unstimCols]
-	newData = cbind(logtrans$pretx, logtrans$6mo, logtrans$12mo, logtrans$24mo, logtrans$pretx_stim, logtrans$12mo_posttx)
-	
-######## Should manually change the order 
-	plot(newData[1,], xlab="Samples", ylab="Frequency(log10)", col="white")
+######## Have to manually change the order !!
+
+	newData = cbind(topSti$S4_pretx, topSti$S4_6mo, topSti$S4_12mo, topSti$S4_24mo, topSti$S4_pretx_stim, topSti$S4_12mo_posttx)
+		
+	totalFreq = apply(newData, 2, sum)
+
+	newData = log10(newData + 0.0000001)
+	colnames(newData) = c("pretx", "6mo", "12mo", "24mo", "pretx_stim", "12mo_posttx")
 
 
+	plot(newData[1,], xlab="Samples", ylab="Frequency(log10)", col="white", xaxt="n", main="Pre-tx MLR donor reactive")
+
+	for (i in 1:nrow(newData)) {
+		points(newData[i,], pch=19, col=i)
+		lines(newData[i,], lty="dotted", col=i)
+	}
 			
+	totalFreq = apply(topSti, 2, sum)
+	axis(1, at=1:ncol(newData), labels=colnames(newData))
+	axis(3, at=1:ncol(newData), labels = round(totalFreq, 4))
+	colnames(topPostSti) = rename
+
+	newData = cbind(topPostSti$S4_pretx, topPostSti$S4_6mo, topPostSti$S4_12mo, topPostSti$S4_24mo, topPostSti$S4_pretx_stim, topPostSti$S4_12mo_posttx)
+		
+	totalFreq = apply(newData, 2, sum)
+
+	newData = log10(newData + 0.0000001)
+	colnames(newData) = c("pretx", "6mo", "12mo", "24mo", "pretx_stim", "12mo_posttx")
+
+	
+	plot(newData[1,], xlab="Samples", ylab="Frequency(log10)", col="white", xaxt="n", main="Post-tx MLR donor reactive")
+
+	for (i in 1:nrow(newData)) {
+		points(newData[i,], pch=19, col=i)
+		lines(newData[i,], lty="dotted", col=i)
+	}
+			
+	axis(1, at=1:ncol(newData), labels=colnames(newData))
+	axis(3, at=1:ncol(newData), labels = round(totalFreq, 4))
+
 
 	dev.off()
 	
 }
+
 
 normalize <- function(tcr){
     if (ncol(tcr) < 1) {
