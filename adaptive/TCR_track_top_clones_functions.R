@@ -9,10 +9,14 @@
 ##2. The abundant clones after 6 months or later are not expanded after stimulation
 
 
-compare <- function(tcr, freq1, freq2, fold=5, prefix = "TopClone") {
+compare <- function(tcr, freq1, freq2, fold=5, prefix = "TopClone", logscale=T) {
     if (ncol(tcr) < 2) {
         return(NA)
     }
+
+	if (logscale == T) {
+		prefix = paste(prefix, "log", sep="_")
+	} 
 
     nsample = ncol(tcr)
 
@@ -52,110 +56,77 @@ compare <- function(tcr, freq1, freq2, fold=5, prefix = "TopClone") {
 
 ### trend of reactive clones from post-tx stim
 	pdf(paste(prefix, "postReactive.pdf", sep = "_"))
-	maxFreq = max(max(tcr[,stimCol], tcr[,postStimCol]))
-	totalFreqPost = sum(topPostSti[,postStimCol])
-	totalFreqPre = sum(topPostSti[,stimCol])
-## plot in original scale	
-#	plot(c(topPostSti[1, stimCol], topPostSti[1, postStimCol]), xlab="Samples", ylab="Frequency", ylim=range(c(0,maxFreq)),  xaxt = "n", col='white')
 
-## plot in log scale
-	plot(c(log10(topPostSti[1, stimCol] + 0.0000001), log10(topPostSti[1, postStimCol] + 0.0000001)), xlab="Samples", ylab="Frequency", ylim=range(c(-7, 0)),  xaxt = "n", col='white')
-	
-	for (i in 1:nrow(topPostSti)) {
-		points(c(log10(topPostSti[i, stimCol] + 0.0000001), log10(topPostSti[i, postStimCol] + 0.0000001)), pch=19, col=i)
-		lines(c(log10(topPostSti[i, stimCol] + 0.0000001), log10(topPostSti[i, postStimCol] + 0.0000001)), lty="dotted", col=i)
-		
-	}
+    newData = cbind(topPostSti[,stimCol], topPostSti[,postStimCol])
+    colnames(newData) = c("pre-tx stim", "post-tx stim")
+	plotTracking(newData, logscale = logscale, title = "Post-tx MLR donor reactive clones")
 
-    axis(1, at=1:2, labels=c("pre-tx stim", "post-tx stim"))
-    
-    
-	#text(1.5, 1.5, paste("npreRx: ", npreRx, "\nnpostRx: ", npostRx))
-	
 	dev.off()
-	print("Donor reactive clones found by post-tx MLR:")
-	print(paste("Total frequency in post-tx stim sample:", round(totalFreqPost, 5), sep="   "))
-	print(paste("Total frequency in pre-tx stim sample:", round(totalFreqPre, 5), sep="   "))
+
 
 ### trend of reactive clones from pre-tx stim
 	pdf(paste(prefix, "preReactive.pdf", sep = "_"))
 
-	totalFreqPost = sum(topSti[,postStimCol])
-	totalFreqPre = sum(topSti[,stimCol])
-	
-#	plot(c(topPostSti[1, stimCol], topPostSti[1, postStimCol]), xlab="Samples", ylab="Frequency", ylim=range(c(0,maxFreq)),  xaxt = "n", col='white')
+	newData = cbind(topSti[,stimCol], topSti[,postStimCol])
+    colnames(newData) = c("pre-tx stim", "post-tx stim")
+	plotTracking(newData, logscale = logscale, title = "Pre-tx MLR donor reactive clones")
 
-	plot(c(log10(topSti[1, stimCol] + 0.0000001), log10(topSti[1, postStimCol] + 0.0000001)), xlab="Samples", ylab="Frequency", ylim=range(c(-7, 0)),  xaxt = "n", col='white')
-	
-	for (i in 1:nrow(topSti)) {
-		points(c(log10(topSti[i, stimCol] + 0.0000001), log10(topSti[i, postStimCol] + 0.0000001)), pch=19, col=i)
-		lines(c(log10(topSti[i, stimCol] + 0.0000001), log10(topSti[i, postStimCol] + 0.0000001)), lty="dotted", col=i)
-		
-	}
-
-    axis(1, at=1:2, labels=c("pre-tx stim", "post-tx stim"))
-	#text(1.5, 1.5, paste("npreRx: ", npreRx, "\nnpostRx: ", npostRx))
 	dev.off()
-	print("Donor reactive clones found by post-tx MLR:")
-	print(paste("Total frequency in post-tx stim sample:", round(totalFreqPost, 5), sep="   "))
-	print(paste("Total frequency in pre-tx stim sample:", round(totalFreqPre, 5), sep="   "))
+	
 
+	rename = gsub("_unstim_CD4|_unstim_CD8|_CD4|_CD8|_antidonor", "", colnames(topSti))
+	rename = gsub("Subject4_|ITN4_", "S4_", rename)
 	
 ### trend of reactive clones from post-tx stim in post-tx unstim samples
 	pdf(paste(prefix, "unstimSamples.pdf", sep = "_"), width=10, height=10)
 	par(mfrow=c(2,1))
-
-	rename = gsub("_unstim_CD4|_unstim_CD8|_CD4|_CD8|_antidonor", "", colnames(topSti))
-	rename = gsub("Subject4_|ITN4_", "S4_", rename)
-	colnames(topSti) = rename
-
-###	unstimSamples = topSti[, unstimCols]
-
-######## Have to manually change the order !!
-
-	newData = cbind(topSti$S4_pretx, topSti$S4_6mo, topSti$S4_12mo, topSti$S4_24mo, topSti$S4_pretx_stim, topSti$S4_12mo_posttx)
-		
-	totalFreq = apply(newData, 2, sum)
-
-	newData = log10(newData + 0.0000001)
-	colnames(newData) = c("pretx", "6mo", "12mo", "24mo", "pretx_stim", "12mo_posttx")
-
-
-	plot(newData[1,], xlab="Samples", ylab="Frequency(log10)", col="white", xaxt="n", main="Pre-tx MLR donor reactive")
-
-	for (i in 1:nrow(newData)) {
-		points(newData[i,], pch=19, col=i)
-		lines(newData[i,], lty="dotted", col=i)
-	}
-			
-	totalFreq = apply(topSti, 2, sum)
-	axis(1, at=1:ncol(newData), labels=colnames(newData))
-	axis(3, at=1:ncol(newData), labels = round(totalFreq, 4))
-	colnames(topPostSti) = rename
-
-	newData = cbind(topPostSti$S4_pretx, topPostSti$S4_6mo, topPostSti$S4_12mo, topPostSti$S4_24mo, topPostSti$S4_pretx_stim, topPostSti$S4_12mo_posttx)
-		
-	totalFreq = apply(newData, 2, sum)
-
-	newData = log10(newData + 0.0000001)
-	colnames(newData) = c("pretx", "6mo", "12mo", "24mo", "pretx_stim", "12mo_posttx")
-
 	
-	plot(newData[1,], xlab="Samples", ylab="Frequency(log10)", col="white", xaxt="n", main="Post-tx MLR donor reactive")
+######## Have to manually change the order !!
+	
+## panel 1, freq tracking for donor reactive clones from pre-tx MLR
 
-	for (i in 1:nrow(newData)) {
-		points(newData[i,], pch=19, col=i)
-		lines(newData[i,], lty="dotted", col=i)
-	}
-			
-	axis(1, at=1:ncol(newData), labels=colnames(newData))
-	axis(3, at=1:ncol(newData), labels = round(totalFreq, 4))
+	colnames(topSti) = rename
+	newData = cbind(topSti$S4_pretx, topSti$S4_6mo, topSti$S4_12mo, topSti$S4_24mo, topSti$S4_pretx_stim, topSti$S4_12mo_posttx)
+	colnames(newData) = c("pretx", "6mo", "12mo", "24mo", "pretx_stim", "12mo_posttx")
+	plotTracking(newData, logscale = logscale, title = "Pre-tx MLR donor reactive clones\n")
 
 
+## panel 2, freq tracking for donor reactive clones from post-tx MLR
+	colnames(topPostSti) = rename
+	newData = cbind(topPostSti$S4_pretx, topPostSti$S4_6mo, topPostSti$S4_12mo, topPostSti$S4_24mo, topPostSti$S4_pretx_stim, topPostSti$S4_12mo_posttx)
+	colnames(newData) = c("pretx", "6mo", "12mo", "24mo", "pretx_stim", "12mo_posttx")
+	plotTracking(newData, logscale = logscale, title = "Post-tx MLR donor reactive clones\n")
+	
+	
 	dev.off()
 	
 }
 
+
+plotTracking <- function(newData, title = "", logscale = T) {
+	zeroadd = 0.00000001 
+	totalFreq = apply(newData, 2, sum)
+	ylabel = "Frequency"
+	yrange = range(c(0, max(newData)))
+
+	if (logscale == T) {
+		newData = log10(newData + zeroadd)
+		ylabel = "Frequency(log10)"
+		yrange = range(c(log10(zeroadd), 0))
+	} 
+	
+	plot(newData[1,], xlab="Samples", ylab=ylabel, col="white", xaxt="n", main=title, ylim = yrange)
+
+	for (i in 1:nrow(newData)) {
+		points(newData[i,], pch=19, col=i)
+		lines(newData[i,], lty="dotted", col=i)
+	}
+			
+	axis(1, at=1:ncol(newData), labels=colnames(newData))
+	axis(3, at=1:ncol(newData), labels = round(totalFreq, 4), tick = F, outer =F, tcl=0)
+	
+	
+}
 
 normalize <- function(tcr){
     if (ncol(tcr) < 1) {
@@ -170,25 +141,38 @@ normalize <- function(tcr){
 
 
 ### main function
-trackClones <- function(file, freq1 = 1e-4, freq2 = 1e-5, fold = 5) {
+trackClonesCL <- function(file, freq1 = 1e-4, freq2 = 1e-5, fold = 5, logscale = T) {
 	tcr = read.table(file, header=T)
-
+	trackClones(tcr,freq1, freq2, fold, logscale = logscale)
+}
+	
+trackClones <- function(tcr, freq1 = 1e-4, freq2 = 1e-5, fold = 5, logscale=T) {
 	cd4 <- tcr[, grep("CD4|cd4", colnames(tcr))]
 	cd8 <- tcr[, grep("CD8|cd8", colnames(tcr))]
 
 	if (!is.null(cd4) & ncol(cd4) > 1) {
 		cd4 <- normalize(cd4)
-		compare(cd4, freq1, freq2, fold, prefix = "CD4")
+		compare(cd4, freq1, freq2, fold, prefix = "CD4", logscale)
 	}
 
 	if(!is.null(cd8) & ncol(cd8) > 1) { 
 		cd8 <- normalize(cd8)
-		compare(cd8, freq1, freq2, fold, prefix = "CD8")
+		compare(cd8, freq1, freq2, fold, prefix = "CD8", logscale)
 	}
+
+	
 }
 	
 args<-commandArgs(TRUE)
 file = args[1]
+logscale = args[2]
+
 if (!is.null(file)) {
-	trackClones(file)
+	if ( !is.null(logscale)) {
+		logflag = T
+	} else {
+		logflag = F
+	}
+		
+	trackClonesCL(file, logscale = logflag)
 }
