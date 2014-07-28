@@ -58,7 +58,7 @@ compare <- function(tcr, freq1, freq2, fold=10) {
         x = c(length(which(allPre[, i] >= freq2 * 100)), length(which(allPre[, i] < freq2 * 100 )))
         y = c(length(which(topSti[, i] >= freq2 * 100)), length(which(topSti[, i] < freq2 * 100 )))
         test = fisher.test(cbind(y, x))
-        cat(colnames(tcr)[i], ":", x, y, signif(test$p.value,2),  round(test$estimate,2),  "\n")
+        cat(colnames(tcr)[i], ":", x, y, signif(test$p.value,2),  round(test$estimate,2), round(test$conf.int[1:2], 2),  "\n")
         
 	
     }
