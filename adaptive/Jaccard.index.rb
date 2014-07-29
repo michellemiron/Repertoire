@@ -30,6 +30,8 @@ def main
   h2 = readFreq(l2)
   e1 = entropy(h1.values)
   e2 = entropy(h2.values)
+  c1 = 1 - e1 / Math.log2(h1.size)
+  c2 = 1 - e2 / Math.log2(h2.size)
   jsd = jensen_shannon(h1, h2)
 
   n = [n, h1.size, h2.size].min
@@ -47,7 +49,7 @@ def main
   ji = overlap.to_f / union
 
 
-  puts "#{l1}\t#{l2}\t#{ji.round(3)}\t#{overlap}\t#{union}\t#{min1.round(8)}\t#{min2.round(8)}\t#{e1.round(3)}\t#{e2.round(3)}\t#{jsd.round(3)}"
+  puts "#{l1}\t#{l2}\t#{ji.round(5)}\t#{overlap}\t#{union}\t#{min1.round(8)}\t#{min2.round(8)}\t#{e1.round(5)}\t#{e2.round(5)}\t#{c1.round(5)}\t#{c2.round(5)}\t#{jsd.round(5)}"
 
 end
 
