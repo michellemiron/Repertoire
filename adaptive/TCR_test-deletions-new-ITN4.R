@@ -192,11 +192,11 @@ cd8 <- normalize(cd8)
 # print(cd4stats[order(rownames(cd4stats), decreasing=T), ])
 # print(cd8stats[order(rownames(cd8stats), decreasing=T), ])
 
-#if (!is.null(cd4) & dim(cd4)[2] > 1) {
-compare(cd4, freq1, freq2, fold)
+#if (!is.null(cd4) && ncol(cd4) > 1) {
+#   compare(cd4, freq1, freq2, fold)
 #}
 
-#if(!is.null(cd8) & dim(cd8)[2] > 1) { 
-#		 compare(cd8, freq1, freq2, fold)
-# }
+if(!is.null(cd8) && ncol(cd8) > 1) { 
+   compare(cd8, freq1, freq2, fold)
+}
 

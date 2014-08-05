@@ -39,7 +39,7 @@ compare <- function(tcr, freq1, freq2, fold=10) {
     
                                         # topSti = tcr[tcr[,stimCol] > tcr[, preCol] * fold & tcr[,stimCol] >= 100 * freq1, ]
     topSti = tcr[topStiRows,]
-    allPre = tcr[tcr[,preCol] >= freq2 * 100, ]
+#    allPre = tcr[tcr[,preCol] >= freq2 * 100, ]
     
 	
 
@@ -49,16 +49,16 @@ compare <- function(tcr, freq1, freq2, fold=10) {
 	# preFreq = topSti[topSti[,preCol] >= freq2 * 100, preCol]
 
 
-#	pretx = c(length(which(topSti[, preCol ] >= freq2 * 100)), length(which(topSti[, preCol] < freq2 * 100)))
+	  pretx = c(length(which(topSti[, preCol ] >= freq2 * 100)), length(which(topSti[, preCol] < freq2 * 100)))
 
 # 	cat(colnames(tcr)[preCol], ":", pretx, "\n")
 #	cat(mean(preFreq), "\n")
     for (i in postCols) {
         
-        x = c(length(which(allPre[, i] >= freq2 * 100)), length(which(allPre[, i] < freq2 * 100 )))
+#        x = c(length(which(allPre[, i] >= freq2 * 100)), length(which(allPre[, i] < freq2 * 100 )))
         y = c(length(which(topSti[, i] >= freq2 * 100)), length(which(topSti[, i] < freq2 * 100 )))
-        test = fisher.test(cbind(y, x))
-        cat(colnames(tcr)[i], ":", x, y, signif(test$p.value,2),  round(test$estimate,2), round(test$conf.int[1:2], 2),  "\n")
+        test = fisher.test(cbind(y, pretx))
+        cat(colnames(tcr)[i], ":", pretx, y, signif(test$p.value,3),  round(test$estimate,3), round(test$conf.int[1:2], 3),  "\n")
         
 	
     }
