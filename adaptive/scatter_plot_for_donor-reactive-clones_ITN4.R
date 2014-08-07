@@ -9,8 +9,7 @@
 ##2. The abundant clones after 6 months or later are not expanded after stimulation
 
 
-compare <- function(tcr, freq1 = 1e-4, freq2 = 1e-5, fold=5, prefix = "TopClone", logscale=T) {
-
+compare <- function(tcr, freq1, freq2, fold=5, prefix = "TopClone", logscale=T) {
     if (ncol(tcr) < 2) {
         return(NA)
     }
@@ -22,82 +21,81 @@ compare <- function(tcr, freq1 = 1e-4, freq2 = 1e-5, fold=5, prefix = "TopClone"
     nsample = ncol(tcr)
 
 	# pre-tx stim sample
-    stimCol <- grep("antidonorstim|Stim|PreSt|PrSt", colnames(tcr))
+    stimCol <- grep("pretx_stim", colnames(tcr))
     
     # pre-tx unstim sample
-    preCol <- grep("pretx", colnames(tcr))[1]
+    preCol <- grep("pretx_unstim", colnames(tcr))[1]
 
 	# unstim samples
-	unstimCols <- grep("pretx|anti|Stim|PreSt|PrSt", colnames(tcr), invert=T)
+	unstimCols <- grep("tx_stim|tx_anti", colnames(tcr), invert=T)
 	
+	# post-tx stim sample in MLR
+   	postStimCol <- grep("posttx_antidonor", colnames(tcr))
+   	# post-tx unstim sample used in MLR
+	postUnstimCol <- grep("12mo_unstim", colnames(tcr))
+
+
      # top clones from in vitro stimulated sample
     
 ### pre-tx stim defined donor reactive clones; row index
     topStiRows = (tcr[,stimCol[1]] > tcr[, preCol] * fold & tcr[,stimCol[1]] >=  freq1 )
-    if(length(stimCol) > 1) {
-    	for (i in 2:length(stimCol)) {
-    		topStiRows = (topStiRows | (tcr[,stimCol[i]] > tcr[, preCol] * fold & tcr[,stimCol[i]] >=  freq1 ))
-     	}
-    }
-    
     topSti = tcr[topStiRows,]
     
-    maxstimCol = topSti[,stimCol[1]]
-    if(length(stimCol) > 1) {
-		maxstimCol  = apply(topSti[,stimCol], 1, max)
 
-	}
+### post-tx stim defined donor reactive clones
 	
-#	print(length(maxstimCol))
-	rename = gsub("_cd4|_cd8", "", colnames(topSti))
-	rename = gsub("ITN5|_ITN5", "", rename)
+	topPostStiRows <- (tcr[,postStimCol] > tcr[, postUnstimCol] * fold & tcr[,postStimCol] >=  freq1 )
+	topPostSti = tcr[topPostStiRows, ]
 
-	colnames(topSti) = rename
-	pretxIndex = grep("pretx", colnames(topSti))[1]
-	lastIndex = grep("last", colnames(topSti))[1]
-	stimIndex = grep("PreSt", colnames(topSti))[1]
-	midunstimIndex = grep("pretx|anti|Stim|PreSt|PrSt|pretx|last", colnames(topSti), invert=T)
-	midunstimNames = colnames(topSti)[midunstimIndex]
-	newData = cbind(maxstimCol, topSti[,pretxIndex], topSti[, midunstimIndex], topSti[,lastIndex])
+### number of post-tx Stim donor reactive clones that are frequent in pre-tx stim sample
+	npreRx = nrow(topPostSti[topPostSti[,stimCol]>= freq1, ])
 	
-	#	rename = gsub("Subject4_|ITN4_", "S4_", rename)
-	colnames(newData) = c("pretx_stim", "pretx", midunstimNames, "last")
+### number of pre-tx Stim donor reactive clones that are frequent in post-tx stim sample
+	npostRx = nrow(topSti[topSti[, postStimCol] >= freq1 , ])
+
+
+
+	rename = gsub("_unstim_CD4|_unstim_CD8|_CD4|_CD8|_antidonor", "", colnames(topSti))
+	rename = gsub("Subject4_|ITN4_", "S4_", rename)
 	
-	npanel = ncol(newData) - 1
-	
-	pdf(paste(prefix, "frequency.pdf", sep = "_"), width=npanel * 3, height=4)
-	par(mfrow=c(1,npanel))
+### trend of reactive clones from post-tx stim in post-tx unstim samples
+	pdf(paste(prefix, "frequency.pdf", sep = "_"), width=15, height=8)
+	par(mfrow=c(2,5))
 	par(family="sans")
 	
+######## Have to manually change the order !!
 	
-	scatterTracking(newData, freq2 = freq2, logscale = logscale)
+## panel 1, freq tracking for donor reactive clones from pre-tx MLR
+
+	colnames(topSti) = rename
+	newData = cbind(topSti$S4_pretx_stim, topSti$S4_pretx, topSti$S4_6mo, topSti$S4_12mo, topSti$S4_24mo,  topSti$S4_12mo_posttx)
+	colnames(newData) = c("pretx_stim", "pretx", "6mo", "12mo", "24mo",  "12mo_posttx")
+	scatterTracking(newData, freq2, logscale = logscale, title = "Pre-tx MLR donor reactive clones\n")
 
 
+## panel 2, freq tracking for donor reactive clones from post-tx MLR
+	colnames(topPostSti) = rename
+	newData = cbind( topPostSti$S4_12mo_posttx, topPostSti$S4_pretx, topPostSti$S4_6mo, topPostSti$S4_12mo, topPostSti$S4_24mo, topPostSti$S4_pretx_stim)
+	colnames(newData) = c("12mo_posttx", "pretx", "6mo", "12mo", "24mo", "pretx_stim" )
+	scatterTracking(newData, logscale = logscale, title = "Post-tx MLR donor reactive clones\n")
 	
 	
 	dev.off()
 	
 }
 
-scatterTracking <- function(data, freq2 = 1e-5, logscale = T, pseudofreq = 1e-7){
+scatterTracking <- function(data, freq2 = 1e-5, title = "", logscale = T, pseudofreq = 1e-7){
 	
 #	data = data + 0.0000001
 	maxfreq = max(data[,2:ncol(data)])
-
 	n = nrow(data)
 	for (i in 2:ncol(data)) {
-		
+		detectable = data[data[,i] >= freq2, ]
 		totalFreq = round(sum(data[,i]),4)
-		
+		n1 = nrow(data[data[,i] >= freq2, ])
+		n2 = n - n1
 		plot(data[,1] + pseudofreq, data[,i]+ pseudofreq, log="xy", col="gray50", pch=19, xlab=colnames(data)[1], ylab="", main=paste(colnames(data)[i], "\n", "total:", totalFreq), xlim=range(c(1e-4,0.5)), ylim=range(c(pseudofreq, maxfreq)), axes = F)
 		abline(h=freq2,col='blue', lty="dashed")
-
-		print(freq2)			
-		detectable = data[data[,i] >= freq2, ]
-#		detectable = data[data[,i] >= 5e-5, ]
-		n1 = nrow(detectable)
-		n2 = n - n1
-		
 		points(detectable[,1] + pseudofreq, detectable[,i] + pseudofreq, col="salmon", pch=19)
 		text(1e-1, 1e-4, labels = paste("N =", n1), col='red')
 		text(1e-1, 1e-6, labels = paste("N =", n2), col='gray30')
@@ -148,22 +146,21 @@ normalize <- function(tcr){
 ### main function
 trackClonesCL <- function(file, freq1 = 1e-4, freq2 = 1e-5, fold = 5, logscale = T) {
 	tcr = read.table(file, header=T)
-	sample = unlist(strsplit(file, "_"))[1]
-	trackClones(tcr,freq1 = freq1, freq2 = freq2, fold, prefix = sample,  logscale = logscale)
+	trackClones(tcr,freq1, freq2, fold, logscale = logscale)
 }
 	
-trackClones <- function(tcr, freq1 = 1e-4, freq2 = 1e-5, fold = 5, prefix = "Sample", logscale=T) {
+trackClones <- function(tcr, freq1 = 1e-4, freq2 = 1e-5, fold = 5, logscale=T) {
 	cd4 <- tcr[, grep("CD4|cd4", colnames(tcr))]
 	cd8 <- tcr[, grep("CD8|cd8", colnames(tcr))]
 
 	if (!is.null(cd4) & ncol(cd4) > 1) {
 		cd4 <- normalize(cd4)
-		compare(cd4, freq1 = freq1, freq2 = freq2, fold = fold, prefix = paste(prefix, "CD4", sep="_"), logscale)
+		compare(cd4, freq1, freq2, fold, prefix = "CD4", logscale)
 	}
 
 	if(!is.null(cd8) & ncol(cd8) > 1) { 
 		cd8 <- normalize(cd8)
-		compare(cd8, freq1 = freq1, freq2 = freq2, fold = fold, prefix = paste(prefix, "CD8", sep="_"), logscale)
+		compare(cd8, freq1, freq2, fold, prefix = "CD8", logscale)
 	}
 
 	
@@ -171,11 +168,14 @@ trackClones <- function(tcr, freq1 = 1e-4, freq2 = 1e-5, fold = 5, prefix = "Sam
 	
 args<-commandArgs(TRUE)
 file = args[1]
-freq2 = args[2]
+logscale = args[2]
 
-if (is.null(freq2)) {
-	freq2 = 1e-5
-} else {
-	freq2 = as.numeric(freq2)
-}		
-trackClonesCL(file, freq2 = freq2, logscale = T)
+if (!is.null(file)) {
+	if ( !is.null(logscale)) {
+		logflag = T
+	} else {
+		logflag = F
+	}
+		
+	trackClonesCL(file, logscale = logflag)
+}
