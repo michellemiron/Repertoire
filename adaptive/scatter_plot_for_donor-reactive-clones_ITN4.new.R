@@ -59,8 +59,8 @@ compare <- function(tcr, freq1, freq2, fold=5, prefix = "TopClone", logscale=T) 
 	rename = gsub("Subject4_|ITN4_", "S4_", rename)
 	
 ### trend of reactive clones from post-tx stim in post-tx unstim samples
-	pdf(paste(prefix, "frequency.pdf", sep = "_"), width=14.5 , height=8)
-	par(mfrow=c(2,5))
+	pdf(paste(prefix, "frequency.pdf", sep = "_"), width=11.6 , height=4)
+	par(mfrow=c(1,4))
 	par(family="sans")
 	
 ######## Have to manually change the order !!
@@ -68,16 +68,16 @@ compare <- function(tcr, freq1, freq2, fold=5, prefix = "TopClone", logscale=T) 
 ## panel 1, freq tracking for donor reactive clones from pre-tx MLR
 
 	colnames(topSti) = rename
-	newData = cbind(topSti$S4_pretx_stim, topSti$S4_pretx, topSti$S4_6mo, topSti$S4_12mo, topSti$S4_24mo,  topSti$S4_12mo_posttx)
-	colnames(newData) = c("pretx_stim", "pretx", "6mo", "12mo", "24mo",  "12mo_posttx")
+	newData = cbind(topSti$S4_pretx_stim, topSti$S4_pretx, topSti$S4_6mo, topSti$S4_12mo, topSti$S4_24mo)
+	colnames(newData) = c("pretx_stim", "pretx", "6mo", "12mo", "24mo")
 	scatterTracking(newData, freq2, logscale = logscale, title = "Pre-tx MLR donor reactive clones\n")
 
 
 ## panel 2, freq tracking for donor reactive clones from post-tx MLR
-	colnames(topPostSti) = rename
-	newData = cbind( topPostSti$S4_12mo_posttx, topPostSti$S4_pretx, topPostSti$S4_6mo, topPostSti$S4_12mo, topPostSti$S4_24mo, topPostSti$S4_pretx_stim)
-	colnames(newData) = c("12mo_posttx", "pretx", "6mo", "12mo", "24mo", "pretx_stim" )
-	scatterTracking(newData, logscale = logscale, title = "Post-tx MLR donor reactive clones\n")
+#	colnames(topPostSti) = rename
+#	newData = cbind( topPostSti$S4_12mo_posttx, topPostSti$S4_pretx, topPostSti$S4_6mo, topPostSti$S4_12mo, topPostSti$S4_24mo, topPostSti$S4_pretx_stim)
+#	colnames(newData) = c("12mo_posttx", "pretx", "6mo", "12mo", "24mo", "pretx_stim" )
+#	scatterTracking(newData, logscale = logscale, title = "Post-tx MLR donor reactive clones\n")
 	
 	
 	dev.off()
