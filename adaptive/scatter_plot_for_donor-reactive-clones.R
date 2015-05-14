@@ -87,7 +87,7 @@ scatterTracking <- function(data, freq2 = 1e-5, logscale = T, pseudofreq = 1e-7)
 	n = nrow(data)
 	for (i in 2:ncol(data)) {
 		
-		totalFreq = round(sum(data[,i]),4)
+		totalFreq = round(sum(data[,i]),6)
 		
 		plot(data[,1] + pseudofreq, data[,i]+ pseudofreq, log="xy", col="gray50", pch=19, xlab=colnames(data)[1], ylab="", main=paste(colnames(data)[i], "\n", "total:", totalFreq), xlim=range(c(1e-4,0.5)), ylim=range(c(pseudofreq, maxfreq)), axes = F)
 		abline(h=freq2,col='blue', lty="dashed")
@@ -128,7 +128,7 @@ plotTracking <- function(newData, title = "", logscale = T) {
 	}
 			
 	axis(1, at=1:ncol(newData), labels=colnames(newData))
-	axis(3, at=1:ncol(newData), labels = round(totalFreq, 4), tick = F, outer =F, tcl=0)
+	axis(3, at=1:ncol(newData), labels = round(totalFreq, 6), tick = F, outer =F, tcl=0)
 	
 	
 }
