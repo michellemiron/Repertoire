@@ -59,6 +59,14 @@ cloneCal <- function(array) {
 }
 
 
+simpsonIndex <- function(array) {
+	x = array[array >0 ] / sum(array)
+	si = sum(x*x)
+	return(signif(si, 4))
+	
+	
+}
+
 
 
 
@@ -90,11 +98,11 @@ repSum <- function(tcr, fold=5, topN) {
     nonReactive = tcr[!(topStiRows),]
     nonPos = tcr[!(posStiRows), ]
  #   nonDom = tcr[!(DomRows), ]
-	r  = matrix(nrow = length(cols), ncol = 11)
+	r  = matrix(nrow = length(cols), ncol = 12)
 	rownames(r) = cols
 #	colnames(r) = c("N_clones", "Reactive_clones", "Positive_clones", "nonDom_clones", "R20", "Reactive_R20", "Pos_R20",  "NonReac_R20", "nonPos_R20",  "Clonality", "Reactive_Clonality", "Pos_Clone", "NR_clonality", "NonPos_clonality", "NonDom_clonality")
 
-	colnames(r) = c("N_clones", "N_reactive_clones", "N_persist_clones", "R20_all", "R20_reactive", "R20_persist",  "R20_non_reactive", "Clonality", "Clonality_rx", "Clonality_persist", "Conality_non_reactive")
+	colnames(r) = c("N_clones", "N_reactive_clones", "N_persist_clones", "R20_all", "R20_reactive", "R20_persist",  "R20_non_reactive", "Clonality", "Clonality_rx", "Clonality_persist", "Conality_non_reactive", "SimpsonIndex")
 	
 	for  (i in 1:length(cols)) {
 		coln = cols[i]
@@ -122,13 +130,15 @@ repSum <- function(tcr, fold=5, topN) {
 		r20per = r20Cal(persistClones[,i])
 		
 		clonality = cloneCal(tcr[,i])
+		si = simpsonIndex(tcr[,i])
+
 		rclone = cloneCal(topSti[,i])
 		pclone = cloneCal(posSti[,i])
 		nrclone = cloneCal(nonReactive[,i])
 		npclone = cloneCal(nonPos[,i])
 	#	ndclone = cloneCal(nonDom[,i])
 		clonalityPers = cloneCal(persistClones[,i])
-		r[i,] = c(nclones, nrclones, nperclones, r20,  rr20, r20per, nrr20, clonality, rclone, clonalityPers, nrclone)
+		r[i,] = c(nclones, nrclones, nperclones, r20,  rr20, r20per, nrr20, clonality, rclone, clonalityPers, nrclone, si)
 	}
 	
 	return(r)
@@ -341,16 +351,16 @@ if( itype == "c")  {
 num = ncol(tcr)
 
 
-cd4 <- tcr[, grep("CD4|cd4", colnames(tcr))]
-#cd8 <- tcr[, grep("CD8|cd8", colnames(tcr))]
+# cd4 <- tcr[, grep("CD4|cd4", colnames(tcr))]
+cd8 <- tcr[, grep("CD8|cd8", colnames(tcr))]
 
-cd4 <- normalize(cd4)
-#cd8 <- normalize(cd8)
+#cd4 <- normalize(cd4)
+cd8 <- normalize(cd8)
 
 # first summary stats
-cd4stats = repSum(cd4, fold, topN)
-#cd8stats = repSum(cd8, fold, topN)
+# cd4stats = repSum(cd4, fold, topN)
+cd8stats = repSum(cd8, fold, topN)
 # print(cd4stats[order(rownames(cd4stats), decreasing=T), ])
 # print(cd8stats[order(rownames(cd8stats), decreasing=T), ])
- write.table(cd4stats, "", quote=F, sep="\t")
-# write.table(cd8stats, "", quote=F, sep="\t")
+# write.table(cd4stats, "", quote=F, sep="\t")
+write.table(cd8stats, "", quote=F, sep="\t")

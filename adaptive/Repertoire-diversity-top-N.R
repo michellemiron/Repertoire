@@ -46,16 +46,21 @@ r20Cal <- function(array) {
 # clonality
 cloneCal <- function(array) {
 	x = array[array >0 ] / sum(array)
-	x = sort(x, decreasing=T)
-	
-	l = min(length(x), 5000)
-	x = x[1:l]
-	total = 0
-	x = x/ sum(x)	
-#	print(x[l])
+
+	l = length(x)
+
 	entropy = sum(x * -1 * log2(x))
 	maxentropy = -log2(1/l)
-	return(signif(1 - entropy / maxentropy, 2))
+	return(signif(1 - entropy / maxentropy, 3))
+}
+
+
+simpsonIndex <- function(array) {
+	x = array[array >0 ] / sum(array)
+	si = sum(x*x)
+	return(signif(si, 3))
+	
+	
 }
 
 
@@ -90,11 +95,11 @@ repSum <- function(tcr, fold=5, topN) {
     nonReactive = tcr[!(topStiRows),]
     nonPos = tcr[!(posStiRows), ]
  #   nonDom = tcr[!(DomRows), ]
-	r  = matrix(nrow = length(cols), ncol = 11)
+	r  = matrix(nrow = length(cols), ncol = 12)
 	rownames(r) = cols
 #	colnames(r) = c("N_clones", "Reactive_clones", "Positive_clones", "nonDom_clones", "R20", "Reactive_R20", "Pos_R20",  "NonReac_R20", "nonPos_R20",  "Clonality", "Reactive_Clonality", "Pos_Clone", "NR_clonality", "NonPos_clonality", "NonDom_clonality")
 
-	colnames(r) = c("N_clones", "N_reactive_clones", "N_persist_clones", "R20_all", "R20_reactive", "R20_persist",  "R20_non_reactive", "Clonality", "Clonality_rx", "Clonality_persist", "Conality_non_reactive")
+	colnames(r) = c("N_clones", "N_reactive_clones", "N_persist_clones", "R20_all", "R20_reactive", "R20_persist",  "R20_non_reactive", "Clonality", "Clonality_rx", "Clonality_persist", "Conality_non_reactive", "SimpsonIndex")
 	
 	for  (i in 1:length(cols)) {
 		coln = cols[i]
@@ -121,14 +126,20 @@ repSum <- function(tcr, fold=5, topN) {
 		npr20 = r20Cal(nonPos[,i])
 		r20per = r20Cal(persistClones[,i])
 		
-		clonality = cloneCal(tcr[,i])
+		x = sort(tcr[,i], decreasing=T)
+	
+		topclones = x[1:(min(length(x), topN))]
+		
+		
+		clonality = cloneCal(topclones)
+		si = simpsonIndex(topclones)
 		rclone = cloneCal(topSti[,i])
 		pclone = cloneCal(posSti[,i])
 		nrclone = cloneCal(nonReactive[,i])
 		npclone = cloneCal(nonPos[,i])
 	#	ndclone = cloneCal(nonDom[,i])
 		clonalityPers = cloneCal(persistClones[,i])
-		r[i,] = c(nclones, nrclones, nperclones, r20,  rr20, r20per, nrr20, clonality, rclone, clonalityPers, nrclone)
+		r[i,] = c(nclones, nrclones, nperclones, r20,  rr20, r20per, nrr20, clonality, rclone, clonalityPers, nrclone, si)
 	}
 	
 	return(r)
@@ -305,7 +316,7 @@ file = opt$input
 freq1 = 1e-4  # freq1 = 1e-4,  "top"
 freq2 = 1e-5  # freq2 = 1e-5, "present"
 fold = 5  # fold change default threshold
-topN = 5000 
+topN = 2000 
 
 itype = "t"
 if (!is.null(opt$type)) {

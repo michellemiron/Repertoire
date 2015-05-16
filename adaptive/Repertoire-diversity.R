@@ -54,7 +54,13 @@ cloneCal <- function(array) {
 }
 
 
-
+simpsonIndex <- function(array) {
+	x = array[array >0 ] / sum(array)
+	si = sum(x*x)
+	return(signif(si, 4))
+	
+	
+}
 
 
 # summary statistics
@@ -85,11 +91,11 @@ repSum <- function(tcr, fold=5) {
     nonReactive = tcr[!(topStiRows),]
     nonPos = tcr[!(posStiRows), ]
  #   nonDom = tcr[!(DomRows), ]
-	r  = matrix(nrow = length(cols), ncol = 11)
+	r  = matrix(nrow = length(cols), ncol = 12)
 	rownames(r) = cols
 #	colnames(r) = c("N_clones", "Reactive_clones", "Positive_clones", "nonDom_clones", "R20", "Reactive_R20", "Pos_R20",  "NonReac_R20", "nonPos_R20",  "Clonality", "Reactive_Clonality", "Pos_Clone", "NR_clonality", "NonPos_clonality", "NonDom_clonality")
 
-	colnames(r) = c("N_clones", "N_reactive_clones", "N_persist_clones", "R20_all", "R20_reactive", "R20_persist",  "R20_non_reactive", "Clonality", "Clonality_rx", "Clonality_persist", "Conality_non_reactive")
+	colnames(r) = c("N_clones", "N_reactive_clones", "N_persist_clones", "R20_all", "R20_reactive", "R20_persist",  "R20_non_reactive", "Clonality", "Clonality_rx", "Clonality_persist", "Conality_non_reactive", "SimpsonIndex")
 	
 	for  (i in 1:length(cols)) {
 		coln = cols[i]
@@ -117,13 +123,15 @@ repSum <- function(tcr, fold=5) {
 		r20per = r20Cal(persistClones[,i])
 		
 		clonality = cloneCal(tcr[,i])
+		si = simpsonIndex(tcr[,i])
+
 		rclone = cloneCal(topSti[,i])
 		pclone = cloneCal(posSti[,i])
 		nrclone = cloneCal(nonReactive[,i])
 		npclone = cloneCal(nonPos[,i])
 	#	ndclone = cloneCal(nonDom[,i])
 		clonalityPers = cloneCal(persistClones[,i])
-		r[i,] = c(nclones, nrclones, nperclones, r20,  rr20, r20per, nrr20, clonality, rclone, clonalityPers, nrclone)
+		r[i,] = c(nclones, nrclones, nperclones, r20,  rr20, r20per, nrr20, clonality, rclone, clonalityPers, nrclone, si)
 	}
 	
 	return(r)
