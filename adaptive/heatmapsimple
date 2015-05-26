@@ -1,0 +1,34 @@
+#make heatmap using ggplot2 in R
+
+##first make table with V and J cassette names as column and row names with each cell being count of that cassette combo
+#example
+                #TCRBV04.02 TCRBV06.08 TCRBV04.01 TCRBV21.01 
+#TCRBJ01-05        982         76       6998       1738            
+T#CRBJ02-01       4219         48       8779        929         
+
+
+
+##simple plot of reads
+library(reshape)
+data <- read.table("HC_18_2013_unstim_CD8_VJtable.tsv", row.names=1)
+matrix <- as.matrix(data)
+m <- melt(matrix)
+library(ggplot2)
+p <- ggplot(m, aes(y=X1, x=X2))
+p + geom_tile(aes(fill=value)) + scale_fill_gradient(low="red", high="yellow",trans="sqrt" ) + xlab("") + ylab("") 
+#log color scale add this
+
+
+##plot frequency
+library(reshape)
+data <- read.table("HC_18_2013_stim_CD4_VJtable.tsv", row.names=1)
+matrix <- as.matrix(data)
+m <- melt(matrix)
+s <- sum(m[,3])
+f<- m[,3]/s
+m <- m[,-3]
+m <- cbind(m,f)
+colnames(m)[3] <- c("value")
+library(ggplot2)
+p <- ggplot(m, aes(y=X1, x=X2))
+p + geom_tile(aes(fill=value)) + scale_fill_gradient(low="red", high="yellow",trans="sqrt") + xlab("") + ylab("") 
