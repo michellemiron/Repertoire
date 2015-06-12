@@ -24,6 +24,10 @@ r50Cal <- function(array) {
 }
 
 r20Cal <- function(array) {
+       if (sum(array) == 0 ) {
+       	  return(-1)
+       }
+
 	x = array[array >0 ] / sum(array)
 	s = sort(x, decreasing=T)
 	l = length(x)
@@ -42,39 +46,103 @@ r20Cal <- function(array) {
 # clonality
 cloneCal <- function(array) {
 	x = array[array >0 ] / sum(array)
+
 	l = length(x)
-	total = 0
+
 	entropy = sum(x * -1 * log2(x))
 	maxentropy = -log2(1/l)
-	return(signif(1 - entropy / maxentropy, 2))
+	return(signif(1 - entropy / maxentropy, 3))
 }
+
+
+simpsonIndex <- function(array) {
+	x = array[array >0 ] / sum(array)
+	si = sum(x*x)
+	return(signif(si, 3))
+	
+	
+}
+
+
+
+
 
 # summary statistics
 
-repSum <- function(tcr) {
-       if (ncol(tcr) < 1) {
-       return(NA)
-}   else {   
+repSum <- function(tcr, fold=5, topN) {	
 	cols = colnames(tcr)
 	
-	r  = matrix(nrow = length(cols), ncol = 6)
+    stimCol <- grep("stim|PreSt|PrSt|Stim", cols)
+    preCol <- grep("tx|pre", colnames(tcr))[1]
+
+# top clones from in vitro stimulated sample
+#     posStiRows = (tcr[,stimCol[1]] > 0 )
+    posStiRows = (tcr[,stimCol[1]] > tcr[,preCol] )
+    topStiRows =  (tcr[,stimCol[1]] > 0.01  & tcr[,stimCol[1]] > fold * tcr[,preCol] )
+	preRows = (tcr[,preCol] > 0 )
+	 
+##	DomRows = (tcr[,stimCol[1]] > 0  & tcr[,stimCol[1]] < tcr[,preCol] )
+    if (length(stimCol) > 1) {
+        for (i in 2:length(stimCol)) {
+            posStiRows = (posStiRows | (tcr[,stimCol[i]] >  tcr[,preCol]   )  )
+			topStiRows = (topStiRows | (tcr[,stimCol[i]] > 0.01  & tcr[,stimCol[i]] > fold * tcr[,preCol] ))
+	#		DomRows = (DomRows | (tcr[,stimCol[i]] > 0  & tcr[,stimCol[i]] < tcr[,preCol] ))
+        }
+    }
+        
+    topSti = tcr[topStiRows,]
+    posSti = tcr[posStiRows,]
+    nonReactive = tcr[!(topStiRows),]
+    nonPos = tcr[!(posStiRows), ]
+ #   nonDom = tcr[!(DomRows), ]
+	r  = matrix(nrow = length(cols), ncol = 12)
 	rownames(r) = cols
-	colnames(r) = c("N_clones", "Min_freq", "Max_freq", "R50", "R20", "Clonality")
+#	colnames(r) = c("N_clones", "Reactive_clones", "Positive_clones", "nonDom_clones", "R20", "Reactive_R20", "Pos_R20",  "NonReac_R20", "nonPos_R20",  "Clonality", "Reactive_Clonality", "Pos_Clone", "NR_clonality", "NonPos_clonality", "NonDom_clonality")
+
+	colnames(r) = c("N_clones", "N_reactive_clones", "N_persist_clones", "R20_all", "R20_reactive", "R20_persist",  "R20_non_reactive", "Clonality", "Clonality_rx", "Clonality_persist", "Conality_non_reactive", "SimpsonIndex")
 	
 	for  (i in 1:length(cols)) {
 		coln = cols[i]
+		
+		persistRows = (tcr[,i] > 0 & preRows & !topStiRows) 
+		persistClones = tcr[persistRows, ]
+		
 		nclones = length(tcr[tcr[,i]>0, i])
-		minfreq = min(tcr[tcr[,i]>0, i])/sum(tcr[,i])
-		maxfreq = signif(max(tcr[,i])/sum(tcr[,i]), 3)
+		nrclones = length(topSti[topSti[,i]>0, i])
+		npclones = length(posSti[posSti[,i]>0, i])
+	#	nndclones = length(nonDom[nonDom[,i]>0, i])
+		nperclones = length(persistClones[,i])
+		
+		
+#		minfreq = min(tcr[tcr[,i]>0, i])/sum(tcr[,i])
+#		maxfreq = signif(max(tcr[,i])/sum(tcr[,i]), 3)
+#		r50 = r50Cal(tcr[,i])
 
-		r50 = r50Cal(tcr[,i])
+
 		r20 = r20Cal(tcr[,i])
-		clonality = cloneCal(tcr[,i])
-		r[i,] = c(nclones, minfreq, maxfreq, r50, r20, clonality)
+		rr20 = r20Cal(topSti[,i])
+		nrr20 = r20Cal(nonReactive[,i])
+		pr20 = r20Cal(posSti[,i])
+		npr20 = r20Cal(nonPos[,i])
+		r20per = r20Cal(persistClones[,i])
+		
+		x = sort(tcr[,i], decreasing=T)
+	
+		topclones = x[1:(min(length(x), topN))]
+		
+		
+		clonality = cloneCal(topclones)
+		si = simpsonIndex(topclones)
+		rclone = cloneCal(topSti[,i])
+		pclone = cloneCal(posSti[,i])
+		nrclone = cloneCal(nonReactive[,i])
+		npclone = cloneCal(nonPos[,i])
+	#	ndclone = cloneCal(nonDom[,i])
+		clonalityPers = cloneCal(persistClones[,i])
+		r[i,] = c(nclones, nrclones, nperclones, r20,  rr20, r20per, nrr20, clonality, rclone, clonalityPers, nrclone, si)
 	}
 	
 	return(r)
-}
 }
 
 shannon.entropy <- function(p)
@@ -104,102 +172,68 @@ jensen_shannon <- function(p, q){
 
 
 compare <- function(tcr, freq1, freq2, fold=10) {
-#	print(dim(tcr))
 	if (ncol(tcr) < 2) {
 		return(NA)
 	}
-#	x = tcr[which(rowMeans(tcr) > 0.001),]
 	
 	## need to renormalize!! 
 	x = normalize(tcr)
-	# x = tcr
-#	print(dim(x))
+
 	nsample = ncol(x)
-#	jsd <- matrix(ncol=nsample, nrow=nsample)
-#	colnames(jsd) = colnames(tcr)
-#	rownames(jsd) = colnames(tcr)
-	##pair-wise jensen-shannon divergence
-#	for (i in 1:(nsample-1)){
-	#	cat(colnames(tcr)[i], "\n")	
-#		jsd[i,i] = 0
-#		for (j in (i+1):nsample){
-#			jsd[j,j] = 0
-#			jsd[i,j] = round(jensen_shannon(x[,i]/100, x[,j]/100), 3)
-#			jsd[j,i] = jsd[i,j]
-#		}
-#	}
-#	cat("J-S D on CDR3", "\n")
-#	print(jsd)
-		
-#	cat(colnames(tcr), "\n")
+
+
 
 #        stimCol <- grep("stim|PreSt|PrSt|Stim", colnames(tcr))[1]
         stimCol <- grep("stim|PreSt|PrSt|Stim", colnames(tcr))
         
         preCol <- grep("tx|pre", colnames(tcr))[1]
         postCols <- grep("stim|pre|tx|PreSt|PrSt|Stim", colnames(tcr), invert=T)
-
-
         
 
 # top clones from in vitro stimulated sample
-        topStiRows = (tcr[,stimCol[1]] > tcr[, preCol] * fold & tcr[,stimCol[1]] >= 100 * freq1 )
+        topStiRows = (tcr[,stimCol[1]] > 0 )
 #        topStiRows = (tcr[,stimCol[2]] > tcr[, preCol] * fold & tcr[,stimCol[2]] >= 100 * freq1 )	
 
-        if (length(stimCol) > 1) {
-            for (i in 2:length(stimCol)) {
-                topStiRows = (topStiRows | (tcr[,stimCol[i]] > tcr[, preCol] * fold & tcr[,stimCol[i]] >= 100 * freq1 ))
-            }
-        }
+#        if (length(stimCol) > 1) {
+#            for (i in 2:length(stimCol)) {
+#                topStiRows = (topStiRows | (tcr[,stimCol[i]] > 0))
+#            }
+#        }
         
-        # topSti = tcr[tcr[,stimCol] > tcr[, preCol] * fold & tcr[,stimCol] >= 100 * freq1, ]
         topSti = tcr[topStiRows,]
-                                        #	cat(dim(topSti), "\n") 
+
+
+
 	
-#	cat(dim(top3pSti), "\n")
-	
+	preCL = cloneCal(topSti[,preCol])
+	stimCL = cloneCal(topSti[,stimCol[1]])
+   	postCL = rep(0, length(postCols))
+#	cat(colnames(tcr)[preCol],  pretx, "\n", sep="\t")
 
-## test 1: look at top expanded clones in stimulated condition, test if they are reduced in post
-#	cat("Test if top expanded clones are reduced even than pre-tx unsti\n")
-
-	# preFreq = topSti[topSti[,preCol] >= freq2 * 100, preCol]
-
-
-	pretx = c(length(which(topSti[, preCol ] >= freq2 * 100)), length(which(topSti[, preCol] < freq2 * 100)))
-
-        
-	cat(colnames(tcr)[preCol],  pretx, "\n", sep="\t")
-
-#	for (i in postCols) {
-#		y = c(length(which(topSti[, i] >= freq2 * 100)), length(which(topSti[, i] < freq2 * 100 )))
-#		test = fisher.test(cbind(y, pretx))
-#		cat(colnames(tcr)[i], y,signif(test$p.value,2),  round(test$estimate,2), "\n", sep="\t")
-#	}
+	j = 1
+	for (i in postCols) {
+		postCL[j] = cloneCal(topSti[,i])
+		j = j + 1
+	}
+	cat(preCL, postCL)
 
 #	cat("------------", "\n")
 ## test 2: 3rd-party sti
-	tpStimCol <- grep("3rd_party", colnames(tcr))
+#	tpStimCol <- grep("3rd_party", colnames(tcr))
 
 #	cat(tpStimCol, "\n")
-	if (length(tpStimCol) > 0 ) {
-            tpStimCol <- tpStimCol[1]
+#	if (length(tpStimCol) > 0 ) {
+#            tpStimCol <- tpStimCol[1]
 
-            top3pSti = tcr[tcr[,tpStimCol] > tcr[,preCol] * fold & tcr[, tpStimCol] >= 100 * freq1, ]
+#            top3pSti = tcr[tcr[,tpStimCol] > tcr[,preCol] * fold & tcr[, tpStimCol] >= 100 * freq1, ]
 
            # preFreq3p = top3pSti[top3pSti[,preCol] >= freq2 * 100, preCol]		
-            pretx3p = c(length(which(top3pSti[, preCol ] >= freq2 * 100)), length(which(top3pSti[, preCol] < freq2 * 100)))
+ #           pretx3p = c(length(which(top3pSti[, preCol ] >= freq2 * 100)), length(which(top3pSti[, preCol] < freq2 * 100)))
 
 #		cat("Third-party stimulation\n")
 #		cat(colnames(tcr)[preCol], " tp:", pretx3p, "\n")
 
-            for (i in postCols) {
-                y3p = c(length(which(top3pSti[, i] >= freq2 * 100)), length(which(top3pSti[, i] < freq2 * 100 )))
-                test3p = fisher.test(cbind(y3p, pretx3p))
-                cat(colnames(tcr)[i], y3p,  signif(test3p$p.value,2),  round(test3p$estimate,2), "\n", sep="\t")
-                
-            }
-        }
-        cat("------------", "\n")
+
 }
 
 
@@ -259,6 +293,7 @@ spec <- matrix(c(
         "freq1" , "m", 2, "double", "min freq to be considered as top clones",
         "freq2", "d", 2, "double", "min freq to be considered as detectable", 
         "fold", "f", 2, "integer", "min fold change to be considered as expanded", 
+	"top", "n", 2, "integer", "top N clones to be considered",
         "vj", 'v', 2, "integer", "[1/0] do analysis on V/J (default 1 means yes)",
         'help'   , 'h', 0, "logical",   "this help"
 ),ncol=5,byrow=T)
@@ -280,12 +315,17 @@ file = opt$input
 
 freq1 = 1e-4  # freq1 = 1e-4,  "top"
 freq2 = 1e-5  # freq2 = 1e-5, "present"
-fold = 10  # fold change default threshold
+fold = 5  # fold change default threshold
+topN = 2000 
 
 itype = "t"
 if (!is.null(opt$type)) {
 	itype = opt$type
 	
+}
+
+if(!is.null(opt$top)) {
+        topN =  opt$top		   
 }
 
 if(!is.null(opt$freq1)) {
@@ -311,41 +351,17 @@ if( itype == "c")  {
 
 num = ncol(tcr)
 
-## example: 
-# nucleotide	total	ITN2_PreCD8_031313	ITNp2PreStim_CD8	ITN2_6moCD8_031313	ITN2_1yCD8_031313	ITN2_2yCD8_031313
-# GGAGCTGGGGGACTCGGCCCTTTATCTTTGCGCCAGCAGCTTGGGGCCGGGTGGGGAGCA	1329732	0.024543792	61.76351143	0	0	0
-
-#if (opt$vj != 0) {
-#	vj = aggregate(. ~ vGeneName + jGeneName, data = tcr, sum)
-
-#	vjDiverg(vj[,grep("CD4", colnames(tcr))])
-#	vjDiverg(vj[,grep("CD8", colnames(tcr))])
-#}
 
 cd4 <- tcr[, grep("CD4|cd4", colnames(tcr))]
-cd8 <- tcr[, grep("CD8|cd8", colnames(tcr))]
+#cd8 <- tcr[, grep("CD8|cd8", colnames(tcr))]
 
 cd4 <- normalize(cd4)
-cd8 <- normalize(cd8)
+#cd8 <- normalize(cd8)
 
 # first summary stats
-cd4stats = repSum(cd4)
-cd8stats = repSum(cd8)
-
-print(cd4stats[order(rownames(cd4stats), decreasing=T), ])
-print(cd8stats[order(rownames(cd8stats), decreasing=T), ])
-
-if (!is.null(cd4) & ncol(cd4) > 1) {
-compare(cd4, freq1, freq2, fold)
-}
-
-if(!is.null(cd8) & ncol(cd8) > 1) { 
-compare(cd8, freq1, freq2, fold)
-}
-
-## compute distance
-
-
-
-# quit(save = "no")
-
+cd4stats = repSum(cd4, fold, topN)
+#cd8stats = repSum(cd8, fold, topN)
+# print(cd4stats[order(rownames(cd4stats), decreasing=T), ])
+# print(cd8stats[order(rownames(cd8stats), decreasing=T), ])
+ write.table(cd4stats, "", quote=F, sep="\t")
+# write.table(cd8stats, "", quote=F, sep="\t")
