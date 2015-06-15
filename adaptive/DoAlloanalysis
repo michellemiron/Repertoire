@@ -1,6 +1,7 @@
 ##Summary Statistics of Alloreactive TCR repetoire
 #README:
-  #example input file has these columns:  nucleotide	total	T1stCD4	T1stCD8	T1unCD4	T1unCD8
+  #example input file has these columns:  
+                      #nucleotide	total	T1stCD4	T1stCD8	T1unCD4	T1unCD8
                       #GCAGGGGGACTCGGCCATGTATCTCTGTGCCAGCAGCACCAATCCGAACACCGGGGAGCT	420112	2557	328483	112	88960
   #set your working directory and run this script from terminal using Rscript DoAlloanalysis.R -f FILENAME
   #this script outputs file saved in the pwd as txt of jsd,entropy and clonality..
